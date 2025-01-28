@@ -10,18 +10,21 @@ dotenv.config()
 //route
 const productRoute = require('~/routes/product.route')
 const categoryRoute = require('~/routes/category.route')
+const cartRoute = require('~/routes/cart.route')
+import userRoute from '~/routes/user.route'
 
 const app = express()
 const port = process.env.PORT || 3001
 const dbUrl = process.env.MONGODB_URI
 
+//config req.body
 app.use(express.json())
-app.use(express.urlencoded({ extended: false }))
+app.use(express.urlencoded({ extended: true }))
 
+//config cors
 const corsOpts = {
     origin: '*',
     exposedHeaders: ['Authorization'],
-
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Origin', 'Content-Type', 'Accept', 'Authorization', 'X-Request-With'],
 }
@@ -29,6 +32,8 @@ app.use(cors(corsOpts))
 
 app.use('/api/products', productRoute)
 app.use('/api/categories', categoryRoute)
+app.use('/api/cart', cartRoute)
+app.use('/api/user', userRoute)
 
 app.get('/', (req, res) => {
     res.send('Hello World!')
