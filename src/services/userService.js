@@ -56,10 +56,10 @@ const loginService = async (email, password) => {
                     name: user.displayName,
                 }
 
-                const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRE })
+                const access_token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRE })
                 return {
                     EC: 0,
-                    token,
+                    access_token,
                     user: {
                         email: user.email,
                         name: user.displayName,
