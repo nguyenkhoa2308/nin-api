@@ -52,6 +52,7 @@ const loginService = async (email, password) => {
                 }
             } else {
                 const payload = {
+                    id: user._id,
                     email: user.email,
                     name: user.displayName,
                 }
@@ -61,6 +62,7 @@ const loginService = async (email, password) => {
                     EC: 0,
                     access_token,
                     user: {
+                        id: user._id,
                         email: user.email,
                         name: user.displayName,
                     },
