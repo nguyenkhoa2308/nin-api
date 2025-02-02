@@ -8,8 +8,12 @@ const auth = (req, res, next) => {
     // if (white_lists.find(item => '/api' + item === req.originalUrl)) {
     //     next()
     // } else {
+        // console.log(req?.headers?.authorization?.split(' ')[1] !== "null");
+        // const authHeader = req?.headers?.authorization;
+        // const token = authHeader && authHeader !== "null" ? authHeader.split(' ')[1] : null;
+        
         //eslint-disable-next-line     
-        if (req?.headers?.authorization?.split(' ')[1]) {
+        if (req?.headers?.authorization?.split(' ')[1] !== "null") {
             const token = req.headers.authorization.split(' ')[1]
             //verify token
             try {
