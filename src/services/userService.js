@@ -85,4 +85,19 @@ const getUserService = async () => {
     }
 }
 
-module.exports = { createUserService, getUserService, loginService }
+const getUserByIdService = async (id) => {
+    try {
+        const user = await User.findOne({ _id: id }).lean().select('-password')
+        if (!user) {
+            return {
+                message: 'User không tồn tại',
+            }
+        }
+        return user
+    } catch (error) {
+        console.log(error)
+        return null
+    }
+}
+
+module.exports = { createUserService, getUserService, loginService, getUserByIdService }

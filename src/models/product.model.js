@@ -24,6 +24,7 @@ const ProductSchema = mongoose.Schema(
         ],
         description: { type: String, required: false },
         slug: { type: String, slug: 'name' },
+        rooms: [{ type: String, enum: ['Phòng khách', 'Phòng ngủ', 'Phòng làm việc', 'Phòng tắm', 'Phòng bếp'] }],
         category: { type: mongoose.Schema.Types.ObjectId, ref: 'Category' },
     },
     {

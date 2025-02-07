@@ -5,6 +5,7 @@ const CartSchema = mongoose.Schema(
         user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
         items: [{ type: mongoose.Schema.Types.ObjectId, ref: 'CartItem' }],
         totalPriceFinal: { type: Number, require: false },
+        totalPriceOriginal: { type: Number, require: false },
     },
     {
         timestamps: true,
