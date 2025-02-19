@@ -1,3 +1,4 @@
+/* eslint-disable indent */
 const mongoose = require('mongoose')
 const CartItem = require('~/models/cartItem.model')
 const Cart = require('~/models/cart.model')
@@ -7,62 +8,79 @@ const { populate } = require('dotenv')
 
 const addToCart = async (req, res) => {
     try {
-        if (req.user.id) {
-            // const userId = '679bd5fdc018816001ab3f15'
-
-            const { productId, quantity = 1 } = req.body
-
-            // const user = await User.findById(userId)
-            const product = await Product.findOne({ _id: productId })
-
-            if (!product) {
-                return res.status(404).json({ message: 'Sản phẩm không tồn tại', EC: 2 })
-            }
-
-            let cart = await Cart.findOne({ user: req.user.id })
-            if (!cart) {
-                cart = new Cart({ user: req.user.id, items: [], totalPriceOriginal: 0, totalPriceFinal: 0 })
-            }
-
-            // let cart = new Cart({ items: [], totalPriceOriginal: 0, totalPriceFinal: 0 })
-
-            let existingItem = null
-
-            for (const item of cart.items) {
-                const cartItem = await CartItem.findById(item._id).populate('product')
-
-                if (cartItem && cartItem.product._id.equals(productId)) {
-                    existingItem = cartItem
-                    break
-                }
-            }
-
-            if (existingItem) {
-                if (existingItem.quantity + quantity > product.quantity) {
-                    existingItem.quantity = product.quantity // Gán số lượng của existingItem bằng số lượng sách có sẵn trong book
-                } else {
-                    existingItem.quantity += quantity
-                }
-                await existingItem.save()
-            } else {
-                const newCartItem = new CartItem({ product: productId, quantity })
-                await newCartItem.save()
-                cart.items.push(newCartItem)
-            }
-
-            cart.totalPriceFinal += quantity * product.priceFinal
-            cart.totalPriceOriginal += quantity * product.priceOriginal
-
-            await cart.save()
-
-            res.status(200).json({ message: 'Sản phẩm đã được thêm vào giỏ hàng thành công', EC: 0 })
-        } else {
+        if (!req.user.id) {
             return res.status(401).json({ message: 'Người dùng cần đăng nhập', EC: 3 })
         }
+
+        const { productId, quantity = 1, variantId } = req.body
+        const product = await Product.findById(productId)
+
+        if (!product) {
+            return res.status(404).json({ message: 'Sản phẩm không tồn tại', EC: 2 })
+        }
+
+        const selectedVariant = product.variant.find((v) => v._id.toString() === variantId)
+        if (!selectedVariant) {
+            return res.status(400).json({ message: 'Màu sắc không hợp lệ!', EC: 4 })
+        }
+
+        // Lấy giỏ hàng của người dùng, nếu chưa có thì tạo mới
+        let cart = await Cart.findOne({ user: req.user.id }).populate('items')
+
+        if (!cart) {
+            cart = new Cart({ user: req.user.id, items: [], totalPriceOriginal: 0, totalPriceFinal: 0 })
+        }
+
+        // Kiểm tra sản phẩm đã có trong giỏ chưa
+        let existingItem = cart.items.find((item) => item.product.equals(productId) && item.variantId.equals(variantId))
+
+        if (existingItem) {
+            // Nếu tổng số lượng vượt quá tồn kho, giới hạn lại
+
+            if (existingItem.quantity === product.stock) {
+                return res.status(400).json({
+                    message: 'Số lượng đã đạt tới tối đa. Không thể thêm',
+                    EC: 4,
+                })
+            }
+
+            if (existingItem.quantity + quantity > product.stock) {
+                return res.status(400).json({
+                    message: `Chỉ có thể thêm tối đa ${product.stock - existingItem.quantity} sản phẩm nữa.`,
+                    EC: 4,
+                })
+            }
+
+            existingItem.quantity += quantity
+            await existingItem.save()
+        } else {
+            if (quantity > product.stock) {
+                return res.status(400).json({
+                    message: `Chỉ có thể thêm tối đa ${product.stock} sản phẩm.`,
+                    EC: 4,
+                })
+            }
+
+            const newCartItem = new CartItem({ product: productId, variantId, quantity })
+            await newCartItem.save()
+            cart.items.push(newCartItem)
+        }
+
+        cart.totalPriceFinal += quantity * product.priceFinal
+        cart.totalPriceOriginal += quantity * product.priceOriginal
+
+        await cart.save()
+
+        res.status(200).json({
+            message: 'Sản phẩm đã được thêm vào giỏ hàng thành công',
+            cart,
+            EC: 0,
+        })
     } catch (error) {
         res.status(500).json({ message: error.message, EC: 1 })
     }
 }
+
 const updateQuantityOfCartItem = async (req, res) => {
     try {
         // Kiểm tra nếu người dùng chưa đăng nhập
@@ -191,7 +209,33 @@ const getCart = async (req, res) => {
                 return res.status(201).json({ cart: newCart })
                 // return res.status(404).json({ message: 'Không tìm thấy giỏ hàng cho người dùng này', EC: 2 })
             }
-            return res.status(200).json({ cart })
+
+            const cartItems = cart.items.map((item) => {
+                const product = item.product
+                const selectedVariant = product.variant.find((v) => v._id.toString() === item.variantId.toString())
+
+                return {
+                    _id: item._id,
+                    product: {
+                        _id: product._id,
+                        name: product.name,
+                        stock: product.stock,
+                        slug: product.slug,
+                        image: selectedVariant?.images[0] || product.image, // Ảnh của variant hoặc ảnh chính của product
+                        priceOriginal: product.priceOriginal,
+                        priceFinal: product.priceFinal || product.priceOriginal,
+                    },
+                    variant: selectedVariant
+                        ? {
+                              _id: selectedVariant._id,
+                              name: selectedVariant.name, // Chỉ lấy name của variant
+                          }
+                        : null,
+                    quantity: item.quantity,
+                }
+            })
+
+            return res.status(200).json({ cart: { ...cart.toObject(), items: cartItems } })
         } else {
             return res.status(401).json({ message: 'Không tìm thấy thông tin người dùng' })
         }

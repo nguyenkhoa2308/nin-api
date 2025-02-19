@@ -12,6 +12,7 @@ const productRoute = require('~/routes/product.route')
 const categoryRoute = require('~/routes/category.route')
 const cartRoute = require('~/routes/cart.route')
 import userRoute from '~/routes/user.route'
+import paymentRoute from '~/routes/payment.route'
 
 const app = express()
 const port = process.env.PORT || 3001
@@ -34,6 +35,7 @@ app.use('/api/products', productRoute)
 app.use('/api/categories', categoryRoute)
 app.use('/api/cart', cartRoute)
 app.use('/api/user', userRoute)
+app.use('/api/payment', paymentRoute)
 
 app.get('/', (req, res) => {
     res.send('Hello World!')
