@@ -2,10 +2,13 @@ const axios = require('axios')
 const crypto = require('crypto')
 const momoConfig = require('../config/momo.config')
 
+import Order from '~/models/order.model'
+
 const createPayment = async (req, res) => {
     try {
-        const { amount } = req.body
-        var orderId = momoConfig.partnerCode + new Date().getTime()
+        const { amount, orderId } = req.body
+
+        // var orderId = momoConfig.partnerCode + new Date().getTime()
         const requestId = orderId
         const orderInfo = `Thanh toán đơn hàng #${orderId}`
 
@@ -32,12 +35,32 @@ const createPayment = async (req, res) => {
 
         const response = await axios.post(momoConfig.apiUrl, payload)
 
-        console.log(response.data)
-
-        res.status(200).json({ payUrl: response.data.payUrl })
+        res.status(200).json({ shortLink: response.data.shortLink })
     } catch (error) {
-        console.error('Lỗi thanh toán MoMo:', error)
+        // console.error('Lỗi thanh toán MoMo:', error)
         res.status(500).send('Có lỗi xảy ra!')
+    }
+}
+
+const callback = async (req, res) => {
+    try {
+        const { orderId, resultCode } = req.body
+
+        if (resultCode === 0) {
+            // 0 = Thanh toán thành công
+            const order = await Order.findOne({ orderCode: orderId })
+            if (!order) {
+                return res.status(404).json({ message: 'Đơn hàng không tồn tại' })
+            }
+
+            order.status = 'Approved' // Cập nhật trạng thái đơn hàng
+            await order.save()
+        }
+
+        res.sendStatus(200) // Trả về OK cho Momo
+    } catch (error) {
+        // console.error('Lỗi xử lý webhook Momo:', error)
+        res.status(500).json({ message: 'Lỗi server' })
     }
 }
 
@@ -64,7 +87,7 @@ const paymentNotify = async (req, res) => {
 
         return res.status(200).json(response.data)
     } catch (error) {
-        console.error('Lỗi xử lý thông báo:', error)
+        // console.error('Lỗi xử lý thông báo:', error)
         res.status(500).send('Có lỗi xảy ra!')
     }
 }
@@ -72,4 +95,5 @@ const paymentNotify = async (req, res) => {
 module.exports = {
     createPayment,
     paymentNotify,
+    callback,
 }

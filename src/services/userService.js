@@ -1,9 +1,9 @@
 /* eslint-disable no-console, no-control-regex*/
 require('dotenv').config()
-
-import User from '~/models/user.model'
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
+
+import User from '~/models/user.model'
 
 const saltRound = 10
 
@@ -55,6 +55,7 @@ const loginService = async (email, password) => {
                     id: user._id,
                     email: user.email,
                     name: user.displayName,
+                    role: user.role,
                 }
 
                 const access_token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRE })
@@ -65,6 +66,7 @@ const loginService = async (email, password) => {
                         id: user._id,
                         email: user.email,
                         name: user.displayName,
+                        role: user.role,
                     },
                 }
             }

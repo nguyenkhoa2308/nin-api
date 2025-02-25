@@ -16,12 +16,14 @@ const auth = (req, res, next) => {
     if (req?.headers?.authorization?.split(' ')[1] !== 'null') {
         const token = req.headers.authorization.split(' ')[1]
         //verify token
+
         try {
             const decoded = jwt.verify(token, process.env.JWT_SECRET)
             req.user = {
                 id: decoded.id,
                 email: decoded.email,
                 name: decoded.name,
+                role: decoded.role,
             }
             // console.log('>>> check token: ', decoded)
             next()
@@ -34,6 +36,14 @@ const auth = (req, res, next) => {
     // }
 }
 
+const adminMiddleware = (req, res, next) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Forbidden' })
+    }
+    next()
+}
+
 module.exports = {
     auth,
+    adminMiddleware,
 }

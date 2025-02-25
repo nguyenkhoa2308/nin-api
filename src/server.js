@@ -12,7 +12,10 @@ const productRoute = require('~/routes/product.route')
 const categoryRoute = require('~/routes/category.route')
 const cartRoute = require('~/routes/cart.route')
 import userRoute from '~/routes/user.route'
+import orderRoute from '~/routes/order.route'
 import paymentRoute from '~/routes/payment.route'
+import addressRoute from '~/routes/address.route'
+import cancelExpiredOrders from './services/cancelExpiredOrders '
 
 const app = express()
 const port = process.env.PORT || 3001
@@ -35,11 +38,15 @@ app.use('/api/products', productRoute)
 app.use('/api/categories', categoryRoute)
 app.use('/api/cart', cartRoute)
 app.use('/api/user', userRoute)
+app.use('/api/order', orderRoute)
 app.use('/api/payment', paymentRoute)
+app.use('/api/address', addressRoute)
 
 app.get('/', (req, res) => {
     res.send('Hello World!')
 })
+
+setInterval(cancelExpiredOrders, 10 * 10000)
 
 mongoose
     .connect(dbUrl)

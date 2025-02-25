@@ -3,64 +3,11 @@ const Product = require('~/models/product.model')
 // const removeAccents = require('remove-accents')
 const slugify = require('slugify')
 const Category = require('~/models/category.model')
-// const { populate } = require('dotenv')
-// const { patch } = require('../routes/product.route')
-
-// const searchBooks = async (req, res) => {
-//     const search = req.query.search || ''
-//     const category = req.query.category || ''
-//     const page = parseInt(req.query.page) || 1
-//     const limit = parseInt(req.query.limit) || 12
-//     const sortBy = req.query.sortBy || 'sold'
-//     const orderBy = req.query.orderBy === 'desc' ? -1 : 1
-//     const minPrice = req.query.minPrice ? parseFloat(req.query.minPrice) : null
-//     const maxPrice = req.query.maxPrice ? parseFloat(req.query.maxPrice) : null
-//     try {
-//         let querySearch = {}
-//         if (search) {
-//             querySearch = { $text: { $search: search } }
-//         }
-//         if (category) {
-//             const categoryModel = await Category.findOne({ slug: category })
-//             if (categoryModel) {
-//                 querySearch['categories'] = categoryModel._id
-//             } else {
-//                 res.status(404).json({ message: 'Không tìm thấy danh mục' })
-//             }
-//         }
-//         querySearch['status'] = { $in: [StatusBook.SELLING, StatusBook.STOP_IMPORT] }
-//         if (minPrice !== null) {
-//             querySearch.priceFinal = { $gte: minPrice }
-//         }
-//         if (maxPrice !== null) {
-//             querySearch.priceFinal = querySearch.priceFinal
-//                 ? { ...querySearch.priceFinal, $lte: maxPrice }
-//                 : { $lte: maxPrice }
-//         }
-//         const books = await Book.find(querySearch)
-//             .select('_id slug name avatar priceOriginal priceFinal status')
-//             .populate('categories')
-//             .sort({ [sortBy]: orderBy })
-//             .skip((page - 1) * limit)
-//             .limit(limit)
-
-//         const totalCount = await Book.countDocuments(querySearch)
-//         const totalPages = Math.ceil(totalCount / limit)
-//         res.status(200).json({
-//             currentPage: page,
-//             totalPages: totalPages,
-//             totalCount: totalCount,
-//             pageSize: books.length,
-//             books: books,
-//         })
-//     } catch (error) {
-//         res.status(500).json({ message: error.message })
-//     }
-// }
 
 const getProducts = async (req, res) => {
     try {
-        const product = await Product.find().populate('category')
+        // const product = await Product.find().populate('category')
+        const product = await Product.find()
         if (product) {
             res.status(200).json(product)
         } else {
@@ -185,21 +132,6 @@ const getAllBrands = async (req, res) => {
     }
 }
 
-// const getBookByAuthor = async (req, res) => {
-//     const slug = req.params.slug
-//     try {
-//         const author = await Author.findOne({ slug: slug })
-//         if (author) {
-//             const books = await Book.find({ author: author._id })
-//             res.status(200).json(books)
-//         } else {
-//             res.status(404).json({ message: 'Không tìm thấy sách' })
-//         }
-//     } catch (error) {
-//         res.status(500).json({ message: error.message })
-//     }
-// }
-
 const createProduct = async (req, res) => {
     try {
         const product = await Product.create(req.body)
@@ -223,31 +155,6 @@ const updateProductById = async (req, res) => {
     }
 }
 
-// const addReviewBook = async (req, res) => {
-//     try {
-//         if (req.user.userId) {
-//             const slug = req.params.slug
-//             const content = req.body.content
-//             const rating = req.body.rating
-//             const book = await Book.findOne({ slug: slug }).populate('reviews')
-//             if (!book) {
-//                 return res.status(404).json('Không tìm thấy thông sách')
-//             }
-//             const review = new Review({
-//                 content: content,
-//                 rating: rating,
-//                 user: req.user.userId,
-//             })
-//             await review.save()
-//             book.reviews.push(review)
-//             await book.save()
-//             return res.status(200).json('Thêm review thành công')
-//         }
-//     } catch (error) {
-//         return res.status(500).json({ message: error.message })
-//     }
-// }
-
 const searchProduct = async (req, res) => {
     try {
         const query = req.query.q
@@ -263,16 +170,30 @@ const searchProduct = async (req, res) => {
     }
 }
 
+const deleteProduct = async (req, res) => {
+    try {
+        const id = req.params.id
+        // const normalizedQuery = removeAccents(query)
+
+        const products = await Product.findByIdAndDelete({ _id: id })
+        if (!products) {
+            res.status(404).json({ message: 'Không tìm thấy sản phẩm' })
+        } else {
+            res.status(200).json({ message: 'Xóa sản phẩm thành công' })
+        }
+    } catch (error) {
+        res.status(500).json({ message: error.message })
+    }
+}
+
 module.exports = {
     getProducts,
-    // searchBooks,
     getProductById,
     getProductsByCategory,
     getProductBySlug,
     getAllBrands,
-    // getBookByAuthor,
     createProduct,
     updateProductById,
     searchProduct,
-    // addReviewBook,
+    deleteProduct,
 }

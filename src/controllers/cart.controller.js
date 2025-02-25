@@ -1,10 +1,10 @@
 /* eslint-disable indent */
-const mongoose = require('mongoose')
 const CartItem = require('~/models/cartItem.model')
 const Cart = require('~/models/cart.model')
 // const User = require('~/models/user.model')
 const Product = require('~/models/product.model')
-const { populate } = require('dotenv')
+
+const mongoose = require('mongoose')
 
 const addToCart = async (req, res) => {
     try {
@@ -75,6 +75,96 @@ const addToCart = async (req, res) => {
             message: 'Sản phẩm đã được thêm vào giỏ hàng thành công',
             cart,
             EC: 0,
+        })
+    } catch (error) {
+        res.status(500).json({ message: error.message, EC: 1 })
+    }
+}
+
+const addMultipleToCart = async (req, res) => {
+    try {
+        if (!req.user.id) {
+            return res.status(401).json({ message: 'Người dùng cần đăng nhập', EC: 3 })
+        }
+
+        const { items } = req.body // Nhận danh sách sản phẩm từ request
+        if (!Array.isArray(items) || items.length === 0) {
+            return res.status(400).json({ message: 'Dữ liệu không hợp lệ!', EC: 4 })
+        }
+
+        let cart = await Cart.findOne({ user: req.user.id }).populate('items')
+
+        if (!cart) {
+            cart = new Cart({ user: req.user.id, items: [], totalPriceOriginal: 0, totalPriceFinal: 0 })
+        }
+
+        let totalAddedPriceFinal = 0
+        let totalAddedPriceOriginal = 0
+
+        // Danh sách lỗi nếu có sản phẩm vượt quá stock
+        let errorMessages = []
+
+        // Bước kiểm tra trước: Kiểm tra tất cả sản phẩm trước khi thêm
+        for (const { productId, quantity = 1, variantId } of items) {
+            const product = await Product.findById(productId)
+            if (!product) {
+                return res.status(404).json({ message: 'Sản phẩm không tồn tại', EC: 2 })
+            }
+
+            const selectedVariant = product.variant.find((v) => v._id.toString() === variantId)
+            if (!selectedVariant) {
+                return res.status(400).json({ message: 'Màu sắc không hợp lệ!', EC: 4 })
+            }
+
+            let existingItem = cart.items.find(
+                (item) => item.product.equals(productId) && item.variantId.equals(variantId),
+            )
+
+            let maxAllowed = product.stock - (existingItem?.quantity || 0)
+
+            if (quantity > maxAllowed) {
+                errorMessages.push(`Sản phẩm ${product.name} chỉ có thể thêm tối đa ${maxAllowed} sản phẩm.`)
+            }
+        }
+
+        // Nếu có lỗi, trả về mà không thêm sản phẩm nào
+        if (errorMessages.length > 0) {
+            return res.status(400).json({
+                message: 'Một số sản phẩm không thể thêm vào giỏ hàng.',
+                errors: errorMessages,
+                EC: 4,
+            })
+        }
+
+        // Nếu không có lỗi, tiến hành thêm sản phẩm vào giỏ
+        for (const { productId, quantity = 1, variantId } of items) {
+            const product = await Product.findById(productId)
+            let existingItem = cart.items.find(
+                (item) => item.product.equals(productId) && item.variantId.equals(variantId),
+            )
+
+            if (existingItem) {
+                existingItem.quantity += quantity
+                await existingItem.save()
+            } else {
+                const newCartItem = new CartItem({ product: productId, variantId, quantity })
+                await newCartItem.save()
+                cart.items.push(newCartItem)
+            }
+
+            totalAddedPriceFinal += quantity * product.priceFinal
+            totalAddedPriceOriginal += quantity * product.priceOriginal
+        }
+
+        cart.totalPriceFinal += totalAddedPriceFinal
+        cart.totalPriceOriginal += totalAddedPriceOriginal
+
+        await cart.save()
+
+        res.status(200).json({
+            message: 'Đã thêm sản phẩm vào giỏ hàng thành công!',
+            cart,
+            status: 200,
         })
     } catch (error) {
         res.status(500).json({ message: error.message, EC: 1 })
@@ -198,6 +288,7 @@ const getCart = async (req, res) => {
                     path: 'product',
                 },
             })
+
             if (!cart) {
                 const newCart = new Cart({
                     user: req.user.id,
@@ -248,5 +339,6 @@ module.exports = {
     addToCart,
     getCart,
     deleteCartItems,
+    addMultipleToCart,
     updateQuantityOfCartItem,
 }

@@ -6,9 +6,10 @@ const OrderItemSchema = mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Product',
         },
-        priceOriginal: { type: Number, require: true },
-        priceFinal: { type: Number, require: false },
-        quantity: { type: Number, require: true, default: 1 },
+        variantId: { type: mongoose.Schema.Types.ObjectId, required: true },
+        priceOriginal: { type: Number, required: true },
+        priceFinal: { type: Number, required: false },
+        quantity: { type: Number, required: true, default: 1 },
     },
     {
         timestamps: true,
