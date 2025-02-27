@@ -13,11 +13,15 @@ const createUserService = async (email, password, firstName, lastName, displayNa
 
         if (user) {
             console.log(`>>> User exist, chọn 1 email khác: ${email}`)
-            return null
+            return {
+                EC: 1,
+                EM: 'Email đã tồn tại',
+            }
         }
 
         const hashPassword = await bcrypt.hash(password, saltRound)
 
+        // eslint-disable-next-line no-unused-vars
         let result = await User.create({
             email: email,
             password: hashPassword,
@@ -28,7 +32,7 @@ const createUserService = async (email, password, firstName, lastName, displayNa
             birthDate: birthDate,
         })
 
-        return result
+        return { EC: 0, EM: 'Đăng nhập thành công' }
     } catch (error) {
         console.log(error)
         return null

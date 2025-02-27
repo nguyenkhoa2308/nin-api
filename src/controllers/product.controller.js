@@ -6,13 +6,29 @@ const Category = require('~/models/category.model')
 
 const getProducts = async (req, res) => {
     try {
+        const { type, limit = 12 } = req.query
+        let products = []
+
         // const product = await Product.find().populate('category')
-        const product = await Product.find()
-        if (product) {
-            res.status(200).json(product)
+        if (type) {
+            if (type === 'featured') {
+                products = await Product.find({ isFeatured: true }).limit(Number(limit))
+            } else if (type === 'best-seller') {
+                products = await Product.find().sort({ sold: -1 }).limit(Number(limit)) // Sắp xếp theo `sold` giảm dần
+            } else if (type === 'new-arrival') {
+                products = await Product.find().sort({ createdAt: -1 }).limit(Number(limit)) // Sắp xếp theo `createdAt`
+            } else {
+                return res.status(400).json({ message: 'Loại sản phẩm không hợp lệ' })
+            }
         } else {
-            res.status(404).json({ message: 'Không tìm thấy sản phẩm' })
+            products = await Product.find() // Không có type, lấy tất cả sản phẩm
         }
+        res.status(200).json(products)
+        // if (product) {
+        // res.status(200).json(product)
+        // } else {
+        //     res.status(404).json({ message: 'Không tìm thấy sản phẩm' })
+        // }
     } catch (error) {
         res.status(500).json({ message: error.message })
     }
