@@ -6,7 +6,7 @@ const {
     getProducts,
     getProductById,
     getProductBySlug,
-    getProductsByCategory,
+    getProductsByCategoryOrRoom,
     createProduct,
     getAllBrands,
     searchProduct,
@@ -19,7 +19,7 @@ router.get('/', getProducts)
 router.get('/brands', getAllBrands)
 router.get('/id/:id', getProductById)
 router.get('/:slug', getProductBySlug)
-router.get('/category/:categorySlug', getProductsByCategory)
+router.get('/category/:categoryOrRoom', getProductsByCategoryOrRoom)
 
 router.post('/add', createProduct)
 

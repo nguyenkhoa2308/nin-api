@@ -34,10 +34,9 @@ const getProducts = async (req, res) => {
     }
 }
 
-const getProductsByCategory = async (req, res) => {
+const getProductsByCategoryOrRoom = async (req, res) => {
     try {
-        const { categorySlug } = req.params
-
+        const { categoryOrRoom } = req.params
         const { brand, priceRanges, sortBy } = req.query
 
         let sortOptions = {}
@@ -56,22 +55,40 @@ const getProductsByCategory = async (req, res) => {
                 sortOptions.slug = -1 // Tên từ Z-A
                 break
             case 'newest':
-                sortOptions.createdAt = -1 // Mới nhất (sắp xếp theo thời gian)
+                sortOptions.createdAt = -1 // Mới nhất
                 break
             case 'oldest':
                 sortOptions.createdAt = 1 // Cũ nhất
                 break
+            case 'best_seller':
+                sortOptions.sold = 1 // Bán chạy nhất
+                break
             default:
                 break
         }
-        // Tìm category theo slug
-        const category = await Category.findOne({ slug: categorySlug })
 
-        if (!category) {
-            return res.status(404).json({ message: 'Không tìm thấy danh mục' })
+        // Danh sách slug rooms
+        const ROOM_SLUGS = {
+            'living-room': 'Phòng khách',
+            bedroom: 'Phòng ngủ',
+            office: 'Phòng làm việc',
+            bathroom: 'Phòng tắm',
+            kitchen: 'Phòng bếp',
         }
 
-        let filter = { category: category._id }
+        let filter = {}
+
+        // Nếu categoryOrRoom nằm trong danh sách rooms
+        if (ROOM_SLUGS[categoryOrRoom]) {
+            filter.rooms = ROOM_SLUGS[categoryOrRoom]
+        } else {
+            // Tìm category theo slug
+            const category = await Category.findOne({ slug: categoryOrRoom })
+            if (!category) {
+                return res.status(404).json({ message: 'Không tìm thấy danh mục' })
+            }
+            filter.category = category._id
+        }
 
         if (brand) {
             const brandArray = Array.isArray(brand) ? brand : [brand]
@@ -95,7 +112,7 @@ const getProductsByCategory = async (req, res) => {
             filter.$or = priceConditions
         }
 
-        // Lấy sản phẩm theo categoryId
+        // Lấy sản phẩm theo category hoặc room
         const products = await Product.find(filter).populate('category').sort(sortOptions)
 
         res.status(200).json(products)
@@ -205,7 +222,7 @@ const deleteProduct = async (req, res) => {
 module.exports = {
     getProducts,
     getProductById,
-    getProductsByCategory,
+    getProductsByCategoryOrRoom,
     getProductBySlug,
     getAllBrands,
     createProduct,

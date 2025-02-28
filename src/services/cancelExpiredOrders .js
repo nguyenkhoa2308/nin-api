@@ -19,6 +19,8 @@ const cancelExpiredOrders = async () => {
             },
         })
 
+        // console.log(expiredOrders)
+
         if (expiredOrders.length > 0) {
             console.log(`Hủy ${expiredOrders.length} đơn hàng Banking quá hạn`)
 
