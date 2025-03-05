@@ -35,7 +35,7 @@ const createPayment = async (req, res) => {
 
         const response = await axios.post(momoConfig.apiUrl, payload)
 
-        res.status(200).json({ shortLink: response.data.shortLink })
+        res.status(200).json({ payUrl: response.data.payUrl })
     } catch (error) {
         // console.error('Lỗi thanh toán MoMo:', error)
         res.status(500).send('Có lỗi xảy ra!')

@@ -67,8 +67,8 @@ const createOrder = async (req, res) => {
                 amount: totalPrice * 1000,
                 orderId: orderCode,
             })
-            if (!momoResponse?.shortLink) return res.status(400).json({ message: 'Không thể tạo thanh toán MoMo!' })
-            link_payment = momoResponse.shortLink
+            if (!momoResponse?.payUrl) return res.status(400).json({ message: 'Không thể tạo thanh toán MoMo!' })
+            link_payment = momoResponse.payUrl
         }
 
         const newOrder = await new Order({
@@ -94,7 +94,7 @@ const createOrder = async (req, res) => {
         }
 
         await Cart.findOneAndDelete({ user: req.user.id })
-        res.status(201).json({ message: 'Đặt hàng thành công!', order: newOrder })
+        res.status(201).json({ message: 'Đặt hàng thành công!', order: newOrder, status: 200 })
     } catch (error) {
         res.status(500).json({ message: 'Đã xảy ra lỗi khi tạo đơn hàng!' })
     }
@@ -155,10 +155,20 @@ const updateStatusOrder = async (req, res) => {
 
         res.json({ message: `Trạng thái đã cập nhật: ${req.body.status}` })
     } catch (error) {
-        console.log(error)
+        // console.log(error)
 
         res.status(500).json({ message: 'Lỗi khi cập nhật trạng thái đơn hàng' })
     }
 }
 
-module.exports = { getAllOrder, createOrder, getOrderByUserId, updateStatusOrder }
+const deleteOrderById = async (req, res) => {
+    try {
+        const order = await Order.findByIdAndDelete(req.params.id)
+        if (!order) return res.status(404).json({ message: 'Đơn hàng không tồn tại' })
+        res.status(200).json({ message: 'Đơn hàng đã được xóa', status: 200 })
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi khi xóa đơn hàng' })
+    }
+}
+
+module.exports = { getAllOrder, createOrder, getOrderByUserId, updateStatusOrder, deleteOrderById }

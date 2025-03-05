@@ -15,6 +15,7 @@ import userRoute from '~/routes/user.route'
 import orderRoute from '~/routes/order.route'
 import paymentRoute from '~/routes/payment.route'
 import addressRoute from '~/routes/address.route'
+import adminRoute from '~/routes/admin.route'
 import cancelExpiredOrders from './services/cancelExpiredOrders '
 
 const app = express()
@@ -41,12 +42,13 @@ app.use('/api/user', userRoute)
 app.use('/api/order', orderRoute)
 app.use('/api/payment', paymentRoute)
 app.use('/api/address', addressRoute)
+app.use('/api/admin', adminRoute)
 
 app.get('/', (req, res) => {
     res.send('Hello World!')
 })
 
-setInterval(cancelExpiredOrders, 10 * 10000)
+setInterval(cancelExpiredOrders, 10 * 60000)
 
 mongoose
     .connect(dbUrl)
