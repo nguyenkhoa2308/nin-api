@@ -175,12 +175,13 @@ const createProduct = async (req, res) => {
 }
 
 const updateProductById = async (req, res) => {
-    const id = req.params.id
+    // const id = req.params.id
     try {
-        const product = await Product.findOneAndUpdate({ _id: id }, req.body, { new: true })
+        const product = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true })
         if (!product) {
             res.status(404).json({ message: 'Không tìm thấy sản phẩm' })
         } else {
+            await product.save()
             res.status(200).json(product)
         }
     } catch (error) {
